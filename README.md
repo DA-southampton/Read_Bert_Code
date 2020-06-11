@@ -1,7 +1,9 @@
 # Read_Bert_Code
 一步步阅读并讲解Bert源码(Pytorch版本)
+# 背景
 现在各大公司对Bert的应用很多，一般来说都需要进行模型压缩才能满足速度的要求，这就需要对Bert结构有足够的了解。于是，准备简单的复现一个Bert模型。这里先把源码仔细的阅读一下，有一个非常细致的了解，对以后针对Bert模型的改造和压缩很有帮助。
 
+# 代码和数据介绍
 首先 我借鉴的代码参考自这个仓库
 
 https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch
