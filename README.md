@@ -1,22 +1,15 @@
-# Read_Bert_Code
-一步步阅读并讲解Bert源码(Pytorch版本)
-# 背景
+# 背景介绍
 现在各大公司对Bert的应用很多，一般来说都需要进行模型压缩才能满足速度的要求，这就需要对Bert结构有足够的了解。于是，准备简单的复现一个Bert模型。这里先把源码仔细的阅读一下，有一个非常细致的了解，对以后针对Bert模型的改造和压缩很有帮助。
 
 # 代码和数据介绍
-首先 我借鉴的代码参考自这个仓库
-
-https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch
-
-我已经下载到了自己的仓库
-
-https://github.com/DA-southampton/chineseGLUE_pytorch
+首先 对代码来说，借鉴的是这个[仓库](https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch)
+我Clone到了[这里](https://github.com/DA-southampton/chineseGLUE_pytorch)方便调试
 
 我会使用这个代码，一步步运行bert关于文本分类的代码，然后同时记录下各种细节包括自己实现的情况。
 
 在运行之前，首先需要准备数据集合，我使用的是tnews数据集，这个也是上面chineseglue仓库使用的其中一个数据集，这个仓库使用的数据集我已经下载下来了，在/Users/zida/Documents/NLP-2020/chineseGLUEdatasets.v0.0.1/ 我使用其中的tnews，将这个数据集复制到/Users/zida/Documents/NLP-2020/Bert/Bert/bert_read_step_to_step/chineseGLUEdatasets/  需要注意的一点是，因为我只是为了了解内部代码情况，所以准确度不是在我的考虑范围之内，所以我只是取其中的一部分数据，其中训练数据使用1k，测试数据使用1k，开发数据1k。
 
-接下来，需要准备中文的Bert词向量，我已经下载了下来，在prev_trained_model/bert-base-chinese 下，现在需要做的是使用代码，将这个tf版本权重转化为pytorch版本。
+接下来，需要准备中文的Bert预训练模型，我已经下载了下来，在prev_trained_model/bert-base-chinese 下，现在需要做的是使用代码，将这个tf版本权重转化为pytorch版本。
 
 准备就绪，使用pycharm导入项目，准备调试。
 
@@ -26,15 +19,18 @@ https://github.com/DA-southampton/chineseGLUE_pytorch
 
 --model_type=bert --model_name_or_path=prev_trained_model/bert-base-chinese --task_name="tnews" --do_train --do_eval --do_lower_case --data_dir=./chineseGLUEdatasets/tnews --max_seq_length=128 --per_gpu_train_batch_size=16 --per_gpu_eval_batch_size=16 --learning_rate=2e-5 --num_train_epochs=4.0 --logging_steps=100 --save_steps=100 --output_dir=./outputs/tnews_output/ --overwrite_output_dir
 
-
-
 然后对run_classifier.py 进行调试，我会在下面总结细节
 
 ## 1.main函数进入
+```python
+##主函数打上断点
+if __name__ == "__main__":
+    main()##主函数进入
+```
 
 ## 2.解析命令行参数
 
-解析命令行参数：主要是什么模型名称，模型地址，是否进行测试等等
+解析命令行参数：主要是什么模型名称，模型地址，是否进行测试等等。比较简单就不罗列代码了。
 
 ## 3.判断一些情况
 
@@ -46,7 +42,17 @@ https://github.com/DA-southampton/chineseGLUE_pytorch
 
 一个是args.local_rank == -1 or args.no_cuda 为true，如果有gpu，就进行单机dpu训练，如果没有gpu就进行单机cpu训练。 否则进行多级GPU训练。
 
-简单来讲，0代表单机GPU训练，-1代表单机CPU训练
+简单来讲，0或者其他数字代表GPU训练，-1代表单机CPU训练
+```python
+if args.local_rank == -1 or args.no_cuda:
+    device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
+    args.n_gpu = torch.cuda.device_count()
+else:  # Initializes the distributed backend which will take care of sychronizing nodes/GPUs
+    torch.cuda.set_device(args.local_rank)
+    device = torch.device("cuda", args.local_rank)
+    torch.distributed.init_process_group(backend='nccl')
+    args.n_gpu = 1
+```
 
 ## 4.获取任务对应Processor
 
@@ -65,6 +71,8 @@ TnewsProcessor(DataProcessor)
 ### 4.1 TnewsProcessor
 
 仔细分析一下TnewsProcessor，首先继承自DataProcessor
+<details>
+  <summary>点击时的区域标题</summary>
 
 ```python
 ## DataProcessor位置：processors.utils.DataProcessor
@@ -103,7 +111,7 @@ class DataProcessor(object):
                 lines.append(line.strip().split("_!_"))
             return lines
 ```
-
+</details>
 
 
 然后它自己包含五个函数，分别是读取训练集，测试集，开发集数据，获取返回label，制作bert需要的格式的数据
