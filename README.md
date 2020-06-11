@@ -167,12 +167,15 @@ class TnewsProcessor(DataProcessor):
 
 <details>
   <summary>点击此处打开折叠代码</summary>
+
 ```python
+
 config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
 config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
 tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path, do_lower_case=args.do_lower_case)
 model = model_class.from_pretrained(args.model_name_or_path, from_tf=bool('.ckpt' in args.model_name_or_path), config=config)
 ```
+
 </details>
 
 ## 6.训练模型-也是最重要的部分
@@ -180,8 +183,10 @@ model = model_class.from_pretrained(args.model_name_or_path, from_tf=bool('.ckpt
 训练模型，从主函数这里看就是两个步骤，一个是加载需要的数据集，一个是进行训练，大概代码就是
 
 ```python
+
 train_dataset = load_and_cache_examples(args, args.task_name, tokenizer, data_type='train')
 global_step, tr_loss = train(args, train_dataset, model, tokenizer)
+
 ```
 
 ### 6.1 加载训练集
@@ -317,6 +322,9 @@ class BertForSequenceClassification(BertPreTrainedModel):
 
 代码如下：
 
+<details>
+  <summary>点击此处打开折叠代码</summary>
+
 ```python
 ## reference: transformers.modeling_bert.BertModel  
 class BertModel(BertPreTrainedModel):
@@ -340,6 +348,8 @@ class BertModel(BertPreTrainedModel):
 				...
         return outputs  
 ```
+
+</details>
 
 对于BertModel ，我们可以把它分成两个部分，第一个部分是对 attention_mask 进行操作,并对输入做embedding，第二个部分是进入encoder进行编码，这里的encoder使用的是BertEncoder。我们直接进去看一下
 
