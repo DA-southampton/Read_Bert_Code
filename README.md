@@ -72,10 +72,10 @@ TnewsProcessor(DataProcessor)
 
 仔细分析一下TnewsProcessor，首先继承自DataProcessor
 <details>
-  <summary>点击时的区域标题</summary>
+  <summary>点击此处打开折叠代码</summary>
 
 ```python
-## DataProcessor位置：processors.utils.DataProcessor
+## DataProcessor在整个项目的位置：processors.utils.DataProcessor
 class DataProcessor(object):
     """Base class for data converters for sequence classification data sets."""
 
@@ -113,9 +113,11 @@ class DataProcessor(object):
 ```
 </details>
 
-
 然后它自己包含五个函数，分别是读取训练集，测试集，开发集数据，获取返回label，制作bert需要的格式的数据
 
+<details>
+  <summary>点击此处打开折叠代码</summary>
+	
 ```python
 class TnewsProcessor(DataProcessor):
     """Processor for the SST-2 data set (GLUE version)."""
@@ -158,10 +160,22 @@ class TnewsProcessor(DataProcessor):
                 InputExample(guid=guid, text_a=text_a, text_b=None, label=label))
         return examples
 ```
+</details>
 
 ## 5.加载预训练模型
+代码比较简单，就是调用预训练模型
 
-## 6.训练模型
+<details>
+  <summary>点击此处打开折叠代码</summary>
+```python
+config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
+config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
+tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path, do_lower_case=args.do_lower_case)
+model = model_class.from_pretrained(args.model_name_or_path, from_tf=bool('.ckpt' in args.model_name_or_path), config=config)
+```
+</details>
+
+## 6.训练模型-也是最重要的部分
 
 训练模型，从主函数这里看就是两个步骤，一个是加载需要的数据集，一个是进行训练，大概代码就是
 
@@ -172,7 +186,7 @@ global_step, tr_loss = train(args, train_dataset, model, tokenizer)
 
 ### 6.1 加载训练集
 
-我们先将第一个函数，load_and_cache_examples 就是加载训练数据集，大概看一下这个代码，核心操作有三个个，一个是利用processor读取训练集，一个是convert_examples_to_features讲数据进行转化，第三个是将转化之后的新数据tensor化，然后使用TensorDataset构造最终的数据集并返回
+我们先看一下第一个函数，load_and_cache_examples 就是加载训练数据集，大概看一下这个代码，核心操作有三个个，一个是利用processor读取训练集，一个是convert_examples_to_features讲数据进行转化，第三个是将转化之后的新数据tensor化，然后使用TensorDataset构造最终的数据集并返回
 
 ```python
 examples = processor.get_train_examples(args.data_dir)
@@ -239,10 +253,11 @@ dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, a
 ```
 
 ### 6.2 训练模型-Train函数
+我们来看第二个函数，就是train的操作。
 
 #### 6.2.1 常规操作
 
-我们来看第二个函数，就是train的操作。
+首先都是一些常规操作。
 
 对数据随机采样：RandomSampler
 
@@ -251,18 +266,11 @@ DataLoader读取数据
 计算总共训练步数（梯度累计），warm_up 参数设定，优化器，是否fp16等等
 
 然后一个batch一个batch进行训练就好了。
+这里最核心的代码就是下面的把数据和参数送入到模型中去：
 
 ```python
-inputs = {'input_ids': batch[0],'attention_mask': batch[1],'labels': batch[3]}
-            if args.model_type != 'distilbert':
-                inputs['token_type_ids'] = batch[2] if args.model_type in ['bert','xlnet','albert','roberta'] else None  # XLM, DistilBERT don't use segment_ids
 outputs = model(**inputs)
- ####input_ids torch.Size([16, 32])
-#### attention_mask ([16, 32])
-#### labels 16
 ```
-
-
 
 我们是在进行一个文本分类的demo操作，使用的是Bert中对应的 BertForSequenceClassification 这个类。
 
@@ -271,6 +279,9 @@ outputs = model(**inputs)
 #### 6.2.2 Bert分类模型：BertForSequenceClassification
 
 主要代码代码如下：
+
+<details>
+  <summary>点击此处打开折叠代码</summary>
 
 ```python
 ##reference: transformers.modeling_bert.BertForSequenceClassification 
@@ -295,6 +306,8 @@ class BertForSequenceClassification(BertPreTrainedModel):
         ...
         return outputs  # (loss), logits, (hidden_states), (attentions)
 ```
+
+</details>
 
 这个类最核心的有两个部分，第一个部分就是使用了 BertModel 获取Bert的原始输出，然后使用 cls的输出继续做后续的分类操作。比较重要的是 BertModel，我们直接进入看 BertModel 这个类的内部情况。代码如下：
 
