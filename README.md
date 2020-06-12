@@ -242,7 +242,7 @@ global_step, tr_loss = train(args, train_dataset, model, tokenizer)
 
 
 
-第一个核心操作，位置在这里(https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L297)，代码如下：
+第一个核心操作，位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L297)，代码如下：
 
 ```python
 examples = processor.get_train_examples(args.data_dir)
