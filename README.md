@@ -1,17 +1,49 @@
-# 背景介绍
-现在各大公司对Bert的应用很多，一般来说都需要进行模型压缩才能满足速度的要求，这就需要对Bert结构有足够的了解。于是，准备简单的复现一个Bert模型。这里先把源码仔细的阅读一下，有一个非常细致的了解，对以后针对Bert模型的改造和压缩很有帮助。
+# Bert源代码解读
+Bert在生产环境的应用需要进行压缩，这就要求对Bert结构很了解，这个仓库会一步步解读Bert源代码（pytorch版本）。
 
 # 代码和数据介绍
 首先 对代码来说，借鉴的是这个[仓库](https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch)
-我Clone到了[这里](https://github.com/DA-southampton/chineseGLUE_pytorch)方便调试
+
+我直接把代码clone过来，放到了本仓库，重新命名为bert_read_step_to_step。
 
 我会使用这个代码，一步步运行bert关于文本分类的代码，然后同时记录下各种细节包括自己实现的情况。
 
-在运行之前，首先需要准备数据集合，我使用的是tnews数据集，这个也是上面chineseglue仓库使用的其中一个数据集，这个仓库使用的数据集我已经下载下来了，在/Users/zida/Documents/NLP-2020/chineseGLUEdatasets.v0.0.1/ 我使用其中的tnews，将这个数据集复制到/Users/zida/Documents/NLP-2020/Bert/Bert/bert_read_step_to_step/chineseGLUEdatasets/  需要注意的一点是，因为我只是为了了解内部代码情况，所以准确度不是在我的考虑范围之内，所以我只是取其中的一部分数据，其中训练数据使用1k，测试数据使用1k，开发数据1k。
+运行之前，需要做两个事情。
 
-接下来，需要准备中文的Bert预训练模型，我已经下载了下来，在prev_trained_model/bert-base-chinese 下，现在需要做的是使用代码，将这个tf版本权重转化为pytorch版本。
+1. 一个是预训练模型的准备，我使用的是谷歌的中文预训练模型：chinese_L-12_H-768_A-12.zip，模型有点大，我就不上传了，如果本地不存在，就点击[这里](https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip),或者直接命令行运行
 
-准备就绪，使用pycharm导入项目，准备调试。
+```shell
+wget https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip
+```
+
+预训练模型下载下来之后，进行解压，然后将tf模型转为对应的pytorch版本即可。对应代码如下:
+
+```shell
+export BERT_BASE_DIR=/path/to/bert/chinese_L-12_H-768_A-12
+
+python convert_tf_checkpoint_to_pytorch.py \
+  --tf_checkpoint_path $BERT_BASE_DIR/bert_model.ckpt \
+  --bert_config_file $BERT_BASE_DIR/bert_config.json \
+  --pytorch_dump_path $BERT_BASE_DIR/pytorch_model.bin
+```
+
+转化成功之后，将模型放入到仓库对应位置：
+
+```shell
+Read_Bert_Code/bert_read_step_to_step/prev_trained_model/
+```
+
+并该名称为 $bert-base-chinese$
+
+2. 第二个事情就是准备训练数据，这里我准备做一个文本分类任务，使用的是Tnews数据集，这个数据集来源是[这里](https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch/chineseGLUEdatasets)，分为训练，测试和开发集，我已经上传到了仓库中，具体位置在
+
+```shell
+Read_Bert_Code/bert_read_step_to_step/chineseGLUEdatasets/tnews
+```
+
+ 需要注意的一点是，因为我只是为了了解内部代码情况，所以准确度不是在我的考虑范围之内，所以我只是取其中的一部分数据，其中训练数据使用1k，测试数据使用1k，开发数据1k。
+
+准备就绪，使用pycharm导入项目，准备调试，我的调试文件是 run_classifier.py文件，对应的参数
 
 正常情况下我是需要运行run_classifier_tnews.sh 这个文件的，这个文件主要是为run_classifier.py这个文件配置一些参数，我把这些参数直接config到run_classifier.py文件中，就不适用run_classifier_tnews.sh这个文件进行运行了。
 
@@ -117,7 +149,7 @@ class DataProcessor(object):
 
 <details>
   <summary>点击此处打开折叠代码</summary>
-	
+
 ```python
 class TnewsProcessor(DataProcessor):
     """Processor for the SST-2 data set (GLUE version)."""
