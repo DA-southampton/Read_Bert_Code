@@ -10,7 +10,9 @@ Bert在生产环境的应用需要进行压缩，这就要求对Bert结构很了
 
 运行之前，需要做两个事情。
 
-1. 一个是预训练模型的准备，我使用的是谷歌的中文预训练模型：chinese_L-12_H-768_A-12.zip，模型有点大，我就不上传了，如果本地不存在，就点击[这里](https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip),或者直接命令行运行
+#### 准备预训练模型
+
+一个是预训练模型的准备，我使用的是谷歌的中文预训练模型：chinese_L-12_H-768_A-12.zip，模型有点大，我就不上传了，如果本地不存在，就点击[这里](https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip)直接下载,或者直接命令行运行
 
 ```shell
 wget https://storage.googleapis.com/bert_models/2018_11_03/chinese_L-12_H-768_A-12.zip
@@ -33,9 +35,15 @@ python convert_tf_checkpoint_to_pytorch.py \
 Read_Bert_Code/bert_read_step_to_step/prev_trained_model/
 ```
 
-并该名称为 $bert-base-chinese$
+并重新命名为：
 
-2. 第二个事情就是准备训练数据，这里我准备做一个文本分类任务，使用的是Tnews数据集，这个数据集来源是[这里](https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch/chineseGLUEdatasets)，分为训练，测试和开发集，我已经上传到了仓库中，具体位置在
+```shell
+ bert-base-chinese
+```
+
+#### 准备文本分类训练数据
+
+第二个事情就是准备训练数据，这里我准备做一个文本分类任务，使用的是Tnews数据集，这个数据集来源是[这里](https://github.com/ChineseGLUE/ChineseGLUE/tree/master/baselines/models_pytorch/classifier_pytorch/chineseGLUEdatasets)，分为训练，测试和开发集，我已经上传到了仓库中，具体位置在
 
 ```shell
 Read_Bert_Code/bert_read_step_to_step/chineseGLUEdatasets/tnews
@@ -43,17 +51,18 @@ Read_Bert_Code/bert_read_step_to_step/chineseGLUEdatasets/tnews
 
  需要注意的一点是，因为我只是为了了解内部代码情况，所以准确度不是在我的考虑范围之内，所以我只是取其中的一部分数据，其中训练数据使用1k，测试数据使用1k，开发数据1k。
 
-准备就绪，使用pycharm导入项目，准备调试，我的调试文件是 run_classifier.py文件，对应的参数
+准备就绪，使用pycharm导入项目，准备调试，我的调试文件是 run_classifier.py文件，对应的参数为
 
-正常情况下我是需要运行run_classifier_tnews.sh 这个文件的，这个文件主要是为run_classifier.py这个文件配置一些参数，我把这些参数直接config到run_classifier.py文件中，就不适用run_classifier_tnews.sh这个文件进行运行了。
-
-这里列一下run_classifier.py的配置参数如下：
-
+```shell
 --model_type=bert --model_name_or_path=prev_trained_model/bert-base-chinese --task_name="tnews" --do_train --do_eval --do_lower_case --data_dir=./chineseGLUEdatasets/tnews --max_seq_length=128 --per_gpu_train_batch_size=16 --per_gpu_eval_batch_size=16 --learning_rate=2e-5 --num_train_epochs=4.0 --logging_steps=100 --save_steps=100 --output_dir=./outputs/tnews_output/ --overwrite_output_dir
+```
 
-然后对run_classifier.py 进行调试，我会在下面总结细节
+然后对run_classifier.py 进行调试，我会在下面是调试的细节
 
 ## 1.main函数进入
+
+首先是主函数位置打入断点，位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L522)，然后进入看一下主函数的情况
+
 ```python
 ##主函数打上断点
 if __name__ == "__main__":
@@ -62,9 +71,11 @@ if __name__ == "__main__":
 
 ## 2.解析命令行参数
 
-解析命令行参数：主要是什么模型名称，模型地址，是否进行测试等等。比较简单就不罗列代码了。
+从[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L333)到[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L413)就是在解析命令行参数，是常规操作，主要是什么模型名称，模型地址，是否进行测试等等。比较简单，直接过就可以了。
 
 ## 3.判断一些情况
+
+从[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L414)到[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L448)是一些常规的判断:
 
 判断是否存在输出文件夹
 
@@ -74,7 +85,10 @@ if __name__ == "__main__":
 
 一个是args.local_rank == -1 or args.no_cuda 为true，如果有gpu，就进行单机dpu训练，如果没有gpu就进行单机cpu训练。 否则进行多级GPU训练。
 
-简单来讲，0或者其他数字代表GPU训练，-1代表单机CPU训练
+简单来讲，0或者其他数字代表GPU训练，-1代表单机CPU训练,
+
+具体可以看代码如下：
+
 ```python
 if args.local_rank == -1 or args.no_cuda:
     device = torch.device("cuda" if torch.cuda.is_available() and not args.no_cuda else "cpu")
@@ -88,44 +102,41 @@ else:  # Initializes the distributed backend which will take care of sychronizin
 
 ## 4.获取任务对应Processor
 
-获取任务对应的相应processor，这个对应的函数就是需要我们自己去定义的处理我们自己输入文件的函数
+获取任务对应的相应processor，这个对应的函数就是需要我们自己去定义的处理我们自己输入文件的函数，位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L449)，代码如下：
 
 ```python
 processor = processors[args.task_name]()
 ```
 
-这里我们使用的是
+这里我们使用的是，这个结果返回的是一个类，我们使用的是如下的类：
 
 ```python
 TnewsProcessor(DataProcessor)
 ```
 
+具体代码位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/processors/glue.py#L376),
+
 ### 4.1 TnewsProcessor
 
 仔细分析一下TnewsProcessor，首先继承自DataProcessor
+
 <details>
   <summary>点击此处打开折叠代码</summary>
 
 ```python
 ## DataProcessor在整个项目的位置：processors.utils.DataProcessor
 class DataProcessor(object):
-    """Base class for data converters for sequence classification data sets."""
-
     def get_train_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the train set."""
         raise NotImplementedError()
 
     def get_dev_examples(self, data_dir):
-        """Gets a collection of `InputExample`s for the dev set."""
         raise NotImplementedError()
 
     def get_labels(self):
-        """Gets the list of labels for this data set."""
         raise NotImplementedError()
 
     @classmethod
     def _read_tsv(cls, input_file, quotechar=None):
-        """Reads a tab separated value file."""
         with open(input_file, "r", encoding="utf-8-sig") as f:
             reader = csv.reader(f, delimiter="\t", quotechar=quotechar)
             lines = []
@@ -145,14 +156,15 @@ class DataProcessor(object):
 ```
 </details>
 
-然后它自己包含五个函数，分别是读取训练集，测试集，开发集数据，获取返回label，制作bert需要的格式的数据
+然后它自己包含五个函数，分别是读取训练集，开发集数据，获取返回label，制作bert需要的格式的数据
+
+接下来看一下 TnewsProcessor代码格式：
 
 <details>
   <summary>点击此处打开折叠代码</summary>
 
 ```python
 class TnewsProcessor(DataProcessor):
-    """Processor for the SST-2 data set (GLUE version)."""
 
     def get_train_examples(self, data_dir):
         """See base class."""
@@ -194,14 +206,16 @@ class TnewsProcessor(DataProcessor):
 ```
 </details>
 
+这里有一点需要提醒大家，如果说我们使用自己的训练数据，有两个方法，第一个就是把数据格式变化成和我们测试用例一样的数据，第二个就是我们在这里更改源代码，去读取我们自己的数据格式
+
 ## 5.加载预训练模型
-代码比较简单，就是调用预训练模型
+
+代码比较简单，就是调用预训练模型，不详细介绍了
 
 <details>
   <summary>点击此处打开折叠代码</summary>
 
 ```python
-
 config_class, model_class, tokenizer_class = MODEL_CLASSES[args.model_type]
 config = config_class.from_pretrained(args.config_name if args.config_name else args.model_name_or_path, num_labels=num_labels, finetuning_task=args.task_name)
 tokenizer = tokenizer_class.from_pretrained(args.tokenizer_name if args.tokenizer_name else args.model_name_or_path, do_lower_case=args.do_lower_case)
@@ -212,22 +226,29 @@ model = model_class.from_pretrained(args.model_name_or_path, from_tf=bool('.ckpt
 
 ## 6.训练模型-也是最重要的部分
 
-训练模型，从主函数这里看就是两个步骤，一个是加载需要的数据集，一个是进行训练，大概代码就是
+训练模型，从主函数这里看就是两个步骤，一个是加载需要的数据集，一个是进行训练，代码位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L472)。大概代码就是这样：
 
 ```python
-
 train_dataset = load_and_cache_examples(args, args.task_name, tokenizer, data_type='train')
 global_step, tr_loss = train(args, train_dataset, model, tokenizer)
 
 ```
 
+两个函数，我们一个个看：
+
 ### 6.1 加载训练集
 
-我们先看一下第一个函数，load_and_cache_examples 就是加载训练数据集，大概看一下这个代码，核心操作有三个个，一个是利用processor读取训练集，一个是convert_examples_to_features讲数据进行转化，第三个是将转化之后的新数据tensor化，然后使用TensorDataset构造最终的数据集并返回
+我们先看一下第一个函数，load_and_cache_examples 就是加载训练数据集，代码位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L274)。大概看一下这个代码，核心操作有三个。
+
+
+
+第一个核心操作，位置在这里(https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L297)，代码如下：
 
 ```python
 examples = processor.get_train_examples(args.data_dir)
 ```
+
+这个代码是为了利用processor读取训练集，很简单。
 
 这里得到的example大概是这样的(这个返回形式在上面看processor的时候很清楚的展示了)：
 
@@ -238,7 +259,9 @@ text_a='今天股票形式不怎么样啊'
 text_b=None
 ```
 
-接下来第二个核心操作是
+第二个核心操作是convert_examples_to_features讲数据进行转化，也很简单。
+
+代码位置在[这里](https://github.com/DA-southampton/Read_Bert_Code/blob/7e3c619aef9e462ec8865cde75c7a0ff2aefe60f/bert_read_step_to_step/run_classifier.py#L303)。代码如下：
 
 ```python
 features = convert_examples_to_features(examples,tokenizer,label_list=label_list,max_length=args.max_seq_length,output_mode=output_mode,pad_on_left=bool(args.model_type in ['xlnet']),                                                pad_token=tokenizer.convert_tokens_to_ids([tokenizer.pad_token])[0],
@@ -267,8 +290,6 @@ processors.glue.glue_convert_examples_to_features
 
 这个时候，我们的input_ids 就变成了上面的列表后面加上128个0.然后我们的attention_mask就变成了上面的形式加上118个0，因为补长的并不是我们的第二个句子，我们压根没第二个句子，所以token_type_ids是总共128个0
 
-
-
 每操作一个数据之后，我们需要做的是
 
 ```python
@@ -283,7 +304,7 @@ InputFeatures 在这里就是将转化之后的特征存储到一个新的变量
 
 在将所有原始数据进行特征转化之后，我们得到了features列表，然后将其中的元素转化为tensor形式，随后
 
-使用TensorDataset获取最终的数据集
+第三个是将转化之后的新数据tensor化，然后使用TensorDataset构造最终的数据集并返回，
 
 ```python
 dataset = TensorDataset(all_input_ids, all_attention_mask, all_token_type_ids, all_lens,all_labels)
