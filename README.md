@@ -83,9 +83,7 @@ if __name__ == "__main__":
 
 判断单机cpu训练还是单机多gpu训练，还是多机分布式gpu训练，这个有两个参数进行控制
 
-一个是args.local_rank == -1 or args.no_cuda 为true，如果有gpu，就进行单机dpu训练，如果没有gpu就进行单机cpu训练。 否则进行多级GPU训练。
-
-简单来讲，0或者其他数字代表GPU训练，-1代表单机CPU训练,
+一个是args.local_rank == -1 or args.no_cuda ，没理解错误的话，简单来讲，-1代表CPU或者是单机多GPU训练,
 
 具体可以看代码如下：
 
