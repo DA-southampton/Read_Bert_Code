@@ -1,4 +1,9 @@
+注解： Transformer，VIT，SwinTRM，BERT 模型从零解读的代码和PPT我移动到了这个仓库：
+
+https://github.com/DA-southampton/TRM_tutorial
+
 # Bert源代码解读-以BERT文本分类代码为例子
+
 Bert在生产环境的应用需要进行压缩，这就要求对Bert结构很了解，这个仓库会一步步解读Bert源代码（pytorch版本）。
 
 # 代码和数据介绍
